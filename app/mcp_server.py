@@ -35,7 +35,12 @@ def read_diagnostic_logs(log_file_name: str, search_keyword: str = "") -> str:
             lines = f.readlines()
 
         if search_keyword:
-            matches = [line.strip() for line in lines if search_keyword.lower() in line.lower()]
+            terms = search_keyword.lower().split()
+            matches = [
+                line.strip()
+                for line in lines
+                if all(term in line.lower() for term in terms)
+            ]
             if not matches:
                 return f"No entries matching '{search_keyword}' in {log_file_name}."
             content = "\n".join(matches)
