@@ -1,0 +1,46 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# Vector Store & Embedded Database Artifacts
+data/milvus_demo.db/
+data/milvus_demo.db/LOCK
+*.parquet
+*.idx
+
+# Log Files & Generated Diagnostics
+*.log
+data/logs/*.log
+!data/logs/.gitkeep
+data/docs/*.txt
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor & IDE metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Distribution / Build
+dist/
+build/
+*.egg-info/
