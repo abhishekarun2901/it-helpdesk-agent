@@ -15,6 +15,7 @@ from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 
 from app.config import get_settings
+from app.guardrails import UserQueryInput, sanitize_agent_output
 from app.mcp_client import get_mcp_tool
 from app.tools import get_all_tools
 
@@ -62,6 +63,12 @@ def router_node(state: AgentState) -> dict[str, str]:
             latest_user_message = str(msg.content)
             break
 
+    # Input guardrail check
+    try:
+        UserQueryInput(query=latest_user_message)
+    except ValueError:
+        return {"route_decision": "escalate"}
+
     router_prompt = [
         SystemMessage(
             content=(
@@ -90,6 +97,12 @@ def router_node(state: AgentState) -> dict[str, str]:
 async def agent_node(state: AgentState) -> dict[str, list[AIMessage]]:
     messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
     response = await agent_llm.ainvoke(messages)
+    
+    # Output guardrail sanitizer applied to content
+    if response.content:
+        clean = sanitize_agent_output(str(response.content))
+        response.content = clean.sanitized_content
+
     return {"messages": [response]}
 
 async def tool_node(state: AgentState) -> dict[str, list[ToolMessage]]:
@@ -121,8 +134,7 @@ async def tool_node(state: AgentState) -> dict[str, list[ToolMessage]]:
 def escalate_node(state: AgentState) -> dict[str, list[AIMessage]]:
     refusal_text = (
         "Request Refused: You are attempting to access restricted systems (e.g., payroll records) "
-        "that cannot be granted through IT Helpdesk. Requests of this nature must be submitted "
-        "directly through HR Operations or Security Operations via ticket type HR-COMP-ACCESS. "
+        "or violating safety policies. Requests of this nature cannot be granted through IT Helpdesk. "
         "This incident has been logged."
     )
     return {"messages": [AIMessage(content=refusal_text)]}
